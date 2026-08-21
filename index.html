@@ -120,9 +120,9 @@
 </head>
 <body>
   <header class="cabecalho">
-  <img src="logo.png" alt="Infinity Piercing" style="height:60px; margin-bottom:8px;">
-  <h1>Infinity Piercing — PDV</h1>
-</header>
+    <img src="logo.png" alt="Infinity Piercing" style="height:60px; margin-bottom:8px;">
+    <h1>Infinity Piercing — PDV</h1>
+  </header>
 
   <main class="area-principal">
     <section class="painel">
@@ -147,7 +147,7 @@
 
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbwi_zQM8tbXoisRTBenG4kPQvA10MSn5Bhrwel05SeBfSgY7qV9fG2qWakCbz62CDU3kQ/exec';
-    const VENDEDORES = ['Andrei', 'Ed', 'Jennifer', 'Jéssica, 'Larissa', 'Tamires'];
+    const VENDEDORES = ['Andrei', 'Ed', 'Jennifer', 'Jéssica', 'Larissa', 'Tamires'];
 
     let catalogo = [];
     let pedido = [];
@@ -184,6 +184,8 @@
         if (dados.ok) {
           catalogo = dados.catalogo || [];
           montarGrade();
+        } else {
+          gradeCatalogo.innerHTML = '<p style="color:#5A6E64">Erro: ' + (dados.mensagem || 'sem dados') + '</p>';
         }
       } catch (erro) {
         gradeCatalogo.innerHTML = '<p style="color:#5A6E64">Catálogo não carregado. Confira o link /exec.</p>';
@@ -214,6 +216,7 @@
       const existente = pedido.find(function (p) { return p.codigo === peca.codigo; });
       if (existente) {
         existente.quantidade += 1;
+        existente.total = existente.quantidade * existente.valorUnitario;
       } else {
         pedido.push({
           codigo: peca.codigo,
