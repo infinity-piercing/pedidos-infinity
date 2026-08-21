@@ -259,7 +259,7 @@
       if (!ultimoWhatsapp || !ultimaMensagem) { mostrarStatus('Informe o WhatsApp do cliente!', 'erro'); fecharSucesso(); return; }
       var numeros = ultimoWhatsapp.replace(/\D/g, '');
       if (numeros.length < 10) { mostrarStatus('WhatsApp inválido!', 'erro'); fecharSucesso(); return; }
-      if (numeros.length === 10) numeros = '55' + numeros; // adiciona DDI se faltar
+      if (numeros.length === 10) numeros = '55' + numeros;
       if (numeros.length === 11 && numeros.indexOf('55') !== 0) numeros = '55' + numeros;
       window.open('https://wa.me/' + numeros + '?text=' + encodeURIComponent(ultimaMensagem), '_blank');
     }
@@ -460,17 +460,19 @@
           ultimoWhatsapp = whatsapp;
           numeroPedido.textContent = ultimoCodigo;
 
-          // Monta a mensagem do WhatsApp com o resumo + parabéns
           var linhas = pedido.map(function (item) {
             return (item.peca + (item.cor ? ' ' + item.cor : '') + (item.tamanho ? ' ' + item.tamanho : '') + ' x' + item.quantidade + ' = R$ ' + formatar(item.total));
           });
           var totalPedido = pedido.reduce(function (soma, item) { return soma + item.total; }, 0);
+
           ultimaMensagem =
-            'Olá ' + cliente + '! 🎉\n\n' +
-            'Seu pedido ' + ultimoCodigo + ' foi finalizado com sucesso!\n\n' +
+            '🖤 *INFINITY PIERCING* 🖤\n\n' +
+            'Olá ' + cliente + '! Tudo bem?\n\n' +
+            'Recebemos seu pedido *' + ultimoCodigo + '*:\n\n' +
             linhas.join('\n') +
-            '\n\nTotal: R$ ' + formatar(totalPedido) +
-            '\n\nPARABÉNS PELA COMPRA.\nTenha uma excelente TATOO WEEK!';
+            '\n\n*Total: R$ ' + formatar(totalPedido) + '*\n\n' +
+            '🎉 PARABÉNS PELA COMPRA!\n' +
+            'Tenha uma excelente TATOO WEEK! 💚';
 
           overlaySucesso.classList.add('visivel');
           pedido = []; campoCliente.value = ''; campoWhatsapp.value = ''; campoEmail.value = '';
