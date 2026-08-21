@@ -13,6 +13,7 @@
       --branco: #FFFFFF;
       --texto: #1A2E26;
       --toque: 60px;
+      --laranja: #E67E22;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -75,46 +76,44 @@
     }
     .botao-peca:active { background: var(--verde-claro); color: var(--branco); transform: scale(0.97); }
     .botao-peca.esgotado { opacity: 0.5; pointer-events: none; }
-
-    /* Layout do botão: foto à esquerda, texto à direita */
-    .conteudo-peca {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .conteudo-peca { display: flex; align-items: center; gap: 10px; }
     .foto-peca {
-      width: 60px;
-      height: 60px;
-      border-radius: 8px;
-      object-fit: cover;
-      border: 1px solid #D5E0DA;
-      flex-shrink: 0;
-      background: #E5ECE8;
+      width: 60px; height: 60px; border-radius: 8px;
+      object-fit: cover; border: 1px solid #D5E0DA;
+      flex-shrink: 0; background: #E5ECE8;
     }
     .info-peca { flex: 1; min-width: 0; }
     .info-peca .nome { font-weight: bold; display: block; }
     .info-peca .sku { color: #5A6E64; font-size: 12px; display: block; }
     .info-peca .preco { color: var(--verde-escuro); font-weight: bold; }
-    .info-peca .estoque { color: #0A5C3D; font-size: 12px; font-weight: bold; display: block; }
+    .info-peca .estoque { font-size: 12px; font-weight: bold; display: block; }
+    .info-peca .estoque.normal { color: #0A5C3D; }
+    .info-peca .estoque.baixo { color: var(--laranja); }
+    .info-peca .estoque.zero { color: #E74C3C; }
     .seletor-vendedor, .campo-cliente {
-      width: 100%;
-      min-height: var(--toque);
-      padding: 12px;
-      border: 2px solid #D5E0DA;
-      border-radius: 8px;
-      font-size: 16px;
-      margin-bottom: 10px;
-      background: var(--branco);
+      width: 100%; min-height: var(--toque); padding: 12px;
+      border: 2px solid #D5E0DA; border-radius: 8px; font-size: 16px;
+      margin-bottom: 10px; background: var(--branco);
     }
     .lista-pedido { max-height: 30vh; overflow-y: auto; margin-bottom: 10px; }
     .item-pedido {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px;
-      border-bottom: 1px solid #E5ECE8;
-      font-size: 14px;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px; border-bottom: 1px solid #E5ECE8; font-size: 14px;
     }
+    .item-pedido .info { flex: 1; min-width: 0; }
+    /* Controles de quantidade + e - */
+    .controle-qtd {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 6px;
+    }
+    .botao-qtd {
+      width: 40px; height: 40px; border: none; border-radius: 8px;
+      font-size: 20px; font-weight: bold; cursor: pointer; color: var(--branco);
+    }
+    .botao-qtd.mais { background: var(--verde-claro); }
+    .botao-qtd.menos { background: #E74C3C; }
+    .botao-qtd:disabled { opacity: 0.4; cursor: not-allowed; }
+    .qtd-valor { font-size: 18px; font-weight: bold; min-width: 30px; text-align: center; }
     .item-pedido .remover {
       background: #E74C3C; color: var(--branco); border: none;
       border-radius: 6px; padding: 8px 12px; font-size: 14px; cursor: pointer; min-height: 40px;
@@ -167,6 +166,7 @@
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbwi_zQM8tbXoisRTBenG4kPQvA10MSn5Bhrwel05SeBfSgY7qV9fG2qWakCbz62CDU3kQ/exec';
     const VENDEDORES = ['Andrei', 'Ed', 'Jennifer', 'Jéssica', 'Larissa', 'Tamires'];
+    const ESTOQUE_BAIXO = 5; // avisa quando estoque for menor que este valor
 
     let catalogo = [];
     let pedido = [];
@@ -211,6 +211,15 @@
       }
     }
 
+    // Corrige a URL da foto: garante que comece com https://
+    function corrigirFoto(url) {
+      if (!url) return '';
+      url = url.trim();
+      if (url.startsWith('http://')) url = 'https://' + url.substring(7);
+      if (!url.startsWith('http')) return '';
+      return url;
+    }
+
     function montarGrade() {
       const termo = campoBusca.value.toLowerCase();
       const filtrados = catalogo.filter(function (p) {
@@ -223,10 +232,16 @@
         const botao = document.createElement('button');
         botao.className = 'botao-peca' + (peca.estoque <= 0 ? ' esgotado' : '');
 
-        // Monta a foto (ou um quadrado vazio se não houver URL)
-        const fotoHtml = peca.foto
-          ? '<img class="foto-peca" src="' + peca.foto + '" alt="' + (peca.peca || '') + '">'
+        const fotoUrl = corrigirFoto(peca.foto);
+        const fotoHtml = fotoUrl
+          ? '<img class="foto-peca" src="' + fotoUrl + '" alt="' + (peca.peca || '') + '" onerror="this.style.display=\'none\'">'
           : '<div class="foto-peca"></div>';
+
+        // Classe do estoque: normal, baixo ou zero
+        let classeEstoque = 'normal';
+        let textoEstoque = 'Em estoque: ' + peca.estoque;
+        if (peca.estoque <= 0) { classeEstoque = 'zero'; textoEstoque = 'ESGOTADO'; }
+        else if (peca.estoque < ESTOQUE_BAIXO) { classeEstoque = 'baixo'; textoEstoque = '⚠️ Estoque baixo: ' + peca.estoque; }
 
         botao.innerHTML =
           '<div class="conteudo-peca">' +
@@ -235,7 +250,7 @@
               '<span class="nome">' + (peca.peca || peca.codigo) + '</span>' +
               '<span class="sku">' + (peca.codigo || '') + (peca.cor ? ' • ' + peca.cor : '') + (peca.tamanho ? ' • ' + peca.tamanho : '') + '</span>' +
               '<span class="preco">R$ ' + formatar(peca.preco) + '</span>' +
-              '<span class="estoque">' + (peca.estoque > 0 ? 'Em estoque: ' + peca.estoque : 'ESGOTADO') + '</span>' +
+              '<span class="estoque ' + classeEstoque + '">' + textoEstoque + '</span>' +
             '</div>' +
           '</div>';
 
@@ -268,9 +283,27 @@
           tamanho: peca.tamanho || '',
           quantidade: 1,
           valorUnitario: peca.preco,
-          total: peca.preco
+          total: peca.preco,
+          estoqueMax: peca.estoque
         });
       }
+      atualizarPedido();
+    }
+
+    // Ajusta a quantidade com os botões + e -
+    function ajustarQuantidade(indice, delta) {
+      const item = pedido[indice];
+      if (!item) return;
+
+      const novaQtd = item.quantidade + delta;
+      if (novaQtd < 1) { removerItem(indice); return; }
+      if (novaQtd > item.estoqueMax) {
+        mostrarStatus('Estoque insuficiente! Máximo: ' + item.estoqueMax, 'erro');
+        return;
+      }
+
+      item.quantidade = novaQtd;
+      item.total = novaQtd * item.valorUnitario;
       atualizarPedido();
     }
 
@@ -283,10 +316,19 @@
         const div = document.createElement('div');
         div.className = 'item-pedido';
         div.innerHTML =
-          '<div><strong>' + descricao + '</strong> x' + item.quantidade +
-          '<br><small>Código: ' + item.codigo + ' | R$ ' + formatar(item.valorUnitario) + '</small></div>' +
-          '<div style="text-align:right">R$ ' + formatar(item.total) +
-          '<br><button class="remover" onclick="removerItem(' + indice + ')">Remover</button></div>';
+          '<div class="info">' +
+            '<strong>' + descricao + '</strong>' +
+            '<br><small>Código: ' + item.codigo + ' | R$ ' + formatar(item.valorUnitario) + '</small>' +
+            '<div class="controle-qtd">' +
+              '<button class="botao-qtd menos" onclick="ajustarQuantidade(' + indice + ', -1)">−</button>' +
+              '<span class="qtd-valor">' + item.quantidade + '</span>' +
+              '<button class="botao-qtd mais" onclick="ajustarQuantidade(' + indice + ', 1)"' + (item.quantidade >= item.estoqueMax ? ' disabled' : '') + '>+</button>' +
+            '</div>' +
+          '</div>' +
+          '<div style="text-align:right">' +
+            'R$ ' + formatar(item.total) +
+            '<br><button class="remover" onclick="removerItem(' + indice + ')">Remover</button>' +
+          '</div>';
         listaPedido.appendChild(div);
       });
       campoTotal.textContent = 'R$ ' + formatar(total);
