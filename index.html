@@ -131,7 +131,6 @@
     #status.ok { display: block; background: #D9F2E5; color: #0A5C3D; }
     #status.erro { display: block; background: #FDE3E3; color: #8B1E1E; }
 
-    /* Tela de sucesso */
     .overlay {
       display: none;
       position: fixed;
@@ -259,7 +258,6 @@
       }
     }
 
-    // Converte qualquer link do Drive para formato renderizável
     function corrigirFoto(url) {
       if (!url) return '';
       url = url.trim();
@@ -407,7 +405,6 @@
       btnFinalizar.disabled = true;
       btnFinalizar.textContent = 'Enviando...';
 
-      // Envia o PEDIDO INTEIRO de uma vez (todos os itens juntos)
       const dados = {
         vendedor: vendedor,
         cliente: cliente,
