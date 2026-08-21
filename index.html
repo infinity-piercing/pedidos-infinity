@@ -57,14 +57,14 @@
     }
     .grade-catalogo {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 10px;
       max-height: 55vh;
       overflow-y: auto;
     }
     .botao-peca {
       min-height: var(--toque);
-      padding: 12px;
+      padding: 10px;
       background: var(--branco);
       border: 2px solid var(--verde-claro);
       border-radius: 10px;
@@ -74,9 +74,28 @@
       transition: background 0.2s, transform 0.1s;
     }
     .botao-peca:active { background: var(--verde-claro); color: var(--branco); transform: scale(0.97); }
-    .botao-peca .nome { font-weight: bold; display: block; }
-    .botao-peca .sku { color: #5A6E64; font-size: 12px; display: block; }
-    .botao-peca .preco { color: var(--verde-escuro); font-weight: bold; }
+    .botao-peca.esgotado { opacity: 0.5; pointer-events: none; }
+
+    /* Layout do botão: foto à esquerda, texto à direita */
+    .conteudo-peca {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .foto-peca {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid #D5E0DA;
+      flex-shrink: 0;
+      background: #E5ECE8;
+    }
+    .info-peca { flex: 1; min-width: 0; }
+    .info-peca .nome { font-weight: bold; display: block; }
+    .info-peca .sku { color: #5A6E64; font-size: 12px; display: block; }
+    .info-peca .preco { color: var(--verde-escuro); font-weight: bold; }
+    .info-peca .estoque { color: #0A5C3D; font-size: 12px; font-weight: bold; display: block; }
     .seletor-vendedor, .campo-cliente {
       width: 100%;
       min-height: var(--toque);
@@ -188,7 +207,7 @@
           gradeCatalogo.innerHTML = '<p style="color:#8B1E1E">Erro do backend: ' + (dados.mensagem || 'sem dados') + '</p>';
         }
       } catch (erro) {
-        gradeCatalogo.innerHTML = '<p style="color:#8B1E1E">Catálogo não carregado. Verifique se a URL /exec está correta e se o acesso está em "Qualquer pessoa".</p>';
+        gradeCatalogo.innerHTML = '<p style="color:#8B1E1E">Catálogo não carregado. Verifique o link /exec.</p>';
       }
     }
 
@@ -202,19 +221,41 @@
       gradeCatalogo.innerHTML = '';
       filtrados.forEach(function (peca) {
         const botao = document.createElement('button');
-        botao.className = 'botao-peca';
+        botao.className = 'botao-peca' + (peca.estoque <= 0 ? ' esgotado' : '');
+
+        // Monta a foto (ou um quadrado vazio se não houver URL)
+        const fotoHtml = peca.foto
+          ? '<img class="foto-peca" src="' + peca.foto + '" alt="' + (peca.peca || '') + '">'
+          : '<div class="foto-peca"></div>';
+
         botao.innerHTML =
-          '<span class="nome">' + (peca.peca || peca.codigo) + '</span>' +
-          '<span class="sku">' + (peca.codigo || '') + (peca.cor ? ' • ' + peca.cor : '') + (peca.tamanho ? ' • ' + peca.tamanho : '') + '</span>' +
-          '<span class="preco">R$ ' + formatar(peca.preco) + '</span>';
+          '<div class="conteudo-peca">' +
+            fotoHtml +
+            '<div class="info-peca">' +
+              '<span class="nome">' + (peca.peca || peca.codigo) + '</span>' +
+              '<span class="sku">' + (peca.codigo || '') + (peca.cor ? ' • ' + peca.cor : '') + (peca.tamanho ? ' • ' + peca.tamanho : '') + '</span>' +
+              '<span class="preco">R$ ' + formatar(peca.preco) + '</span>' +
+              '<span class="estoque">' + (peca.estoque > 0 ? 'Em estoque: ' + peca.estoque : 'ESGOTADO') + '</span>' +
+            '</div>' +
+          '</div>';
+
         botao.addEventListener('click', function () { adicionarAoPedido(peca); });
         gradeCatalogo.appendChild(botao);
       });
     }
 
     function adicionarAoPedido(peca) {
+      if (peca.estoque <= 0) { mostrarStatus('Peça esgotada!', 'erro'); return; }
+
       const chave = peca.codigo + '|' + (peca.cor || '') + '|' + (peca.tamanho || '');
       const existente = pedido.find(function (p) { return p.chave === chave; });
+
+      const jaNoPedido = existente ? existente.quantidade : 0;
+      if (jaNoPedido + 1 > peca.estoque) {
+        mostrarStatus('Estoque insuficiente para esta peça!', 'erro');
+        return;
+      }
+
       if (existente) {
         existente.quantidade += 1;
         existente.total = existente.quantidade * existente.valorUnitario;
@@ -286,8 +327,9 @@
       }
 
       if (sucesso) {
-        mostrarStatus('✅ Pedido registrado na planilha!', 'ok');
+        mostrarStatus('✅ Pedido registrado e estoque atualizado!', 'ok');
         pedido = []; campoCliente.value = ''; atualizarPedido();
+        carregarCatalogo();
       } else {
         mostrarStatus('Erro ao salvar. Confira o link /exec!', 'erro');
       }
