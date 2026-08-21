@@ -58,7 +58,7 @@
     }
     .grade-catalogo {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 10px;
       max-height: 55vh;
       overflow-y: auto;
@@ -76,9 +76,9 @@
     }
     .botao-peca:active { background: var(--verde-claro); color: var(--branco); transform: scale(0.97); }
     .botao-peca.esgotado { opacity: 0.5; pointer-events: none; }
-    .conteudo-peca { display: flex; align-items: center; gap: 10px; }
+    .conteudo-peca { display: flex; align-items: center; gap: 12px; }
     .foto-peca {
-      width: 60px; height: 60px; border-radius: 8px;
+      width: 80px; height: 80px; border-radius: 8px;
       object-fit: cover; border: 1px solid #D5E0DA;
       flex-shrink: 0; background: #E5ECE8;
     }
@@ -90,12 +90,12 @@
     .info-peca .estoque.normal { color: #0A5C3D; }
     .info-peca .estoque.baixo { color: var(--laranja); }
     .info-peca .estoque.zero { color: #E74C3C; }
-    .seletor-vendedor, .campo-cliente {
+    .seletor-vendedor, .campo-cliente, .campo-whatsapp, .campo-email {
       width: 100%; min-height: var(--toque); padding: 12px;
       border: 2px solid #D5E0DA; border-radius: 8px; font-size: 16px;
       margin-bottom: 10px; background: var(--branco);
     }
-    .lista-pedido { max-height: 30vh; overflow-y: auto; margin-bottom: 10px; }
+    .lista-pedido { max-height: 28vh; overflow-y: auto; margin-bottom: 10px; }
     .item-pedido {
       display: flex; justify-content: space-between; align-items: center;
       padding: 10px; border-bottom: 1px solid #E5ECE8; font-size: 14px;
@@ -146,7 +146,7 @@
       background: var(--branco);
       border-radius: 16px;
       padding: 40px 30px;
-      max-width: 420px;
+      max-width: 440px;
       width: 100%;
       text-align: center;
       box-shadow: 0 10px 40px rgba(0,0,0,0.3);
@@ -157,11 +157,13 @@
     .caixa-sucesso .numero-pedido { font-size: 28px; font-weight: bold; color: var(--verde-claro); margin: 12px 0; }
     .caixa-sucesso p { font-size: 16px; color: var(--texto); line-height: 1.5; margin-bottom: 6px; }
     .caixa-sucesso .parabens { font-size: 18px; font-weight: bold; color: var(--verde-escuro); margin-top: 10px; }
-    .botao-fechar {
-      margin-top: 20px; min-height: var(--toque); width: 100%;
-      border: none; border-radius: 10px; background: var(--verde-escuro);
+    .botao-fechar, .botao-whatsapp {
+      margin-top: 12px; min-height: var(--toque); width: 100%;
+      border: none; border-radius: 10px;
       color: var(--branco); font-size: 17px; font-weight: bold; cursor: pointer;
     }
+    .botao-whatsapp { background: #25D366; }
+    .botao-fechar { background: var(--verde-escuro); }
   </style>
 </head>
 <body>
@@ -181,6 +183,8 @@
       <h2>🧾 Pedido</h2>
       <select class="seletor-vendedor" id="vendedor"></select>
       <input class="campo-cliente" id="cliente" placeholder="Nome do cliente">
+      <input class="campo-whatsapp" id="whatsapp" placeholder="WhatsApp do cliente (ex: 11999999999)">
+      <input class="campo-email" id="email" placeholder="E-mail do cliente">
       <div class="lista-pedido" id="lista-pedido"></div>
       <div class="total"><span>TOTAL:</span><strong id="total">R$ 0,00</strong></div>
       <div class="acoes">
@@ -199,6 +203,7 @@
       <p>finalizado com Sucesso</p>
       <p class="parabens">PARABÉNS PELA COMPRA.</p>
       <p>Tenha uma excelente TATOO WEEK!</p>
+      <button class="botao-whatsapp" id="btn-whatsapp">💬 Enviar por WhatsApp</button>
       <button class="botao-fechar" id="btn-fechar">✅ Novo pedido</button>
     </div>
   </div>
@@ -210,10 +215,15 @@
 
     let catalogo = [];
     let pedido = [];
+    let ultimoCodigo = '';
+    let ultimoWhatsapp = '';
+    let ultimaMensagem = '';
 
     const gradeCatalogo = document.getElementById('grade-catalogo');
     const selVendedor = document.getElementById('vendedor');
     const campoCliente = document.getElementById('cliente');
+    const campoWhatsapp = document.getElementById('whatsapp');
+    const campoEmail = document.getElementById('email');
     const listaPedido = document.getElementById('lista-pedido');
     const campoTotal = document.getElementById('total');
     const btnFinalizar = document.getElementById('btn-finalizar');
@@ -223,6 +233,7 @@
     const overlaySucesso = document.getElementById('overlay-sucesso');
     const numeroPedido = document.getElementById('numero-pedido');
     const btnFechar = document.getElementById('btn-fechar');
+    const btnWhatsapp = document.getElementById('btn-whatsapp');
 
     montarVendedores();
     carregarCatalogo();
@@ -230,6 +241,7 @@
     btnLimpar.addEventListener('click', limparPedido);
     campoBusca.addEventListener('input', montarGrade);
     btnFechar.addEventListener('click', fecharSucesso);
+    btnWhatsapp.addEventListener('click', abrirWhatsapp);
 
     function montarVendedores() {
       VENDEDORES.forEach(function (nome) {
@@ -242,6 +254,15 @@
     }
 
     function fecharSucesso() { overlaySucesso.classList.remove('visivel'); }
+
+    function abrirWhatsapp() {
+      if (!ultimoWhatsapp || !ultimaMensagem) { mostrarStatus('Informe o WhatsApp do cliente!', 'erro'); fecharSucesso(); return; }
+      var numeros = ultimoWhatsapp.replace(/\D/g, '');
+      if (numeros.length < 10) { mostrarStatus('WhatsApp inválido!', 'erro'); fecharSucesso(); return; }
+      if (numeros.length === 10) numeros = '55' + numeros; // adiciona DDI se faltar
+      if (numeros.length === 11 && numeros.indexOf('55') !== 0) numeros = '55' + numeros;
+      window.open('https://wa.me/' + numeros + '?text=' + encodeURIComponent(ultimaMensagem), '_blank');
+    }
 
     async function carregarCatalogo() {
       try {
@@ -399,6 +420,8 @@
     async function finalizarPedido() {
       const vendedor = selVendedor.value;
       const cliente = campoCliente.value.trim();
+      const whatsapp = campoWhatsapp.value.trim();
+      const email = campoEmail.value.trim();
       if (!cliente) { mostrarStatus('Digite o nome do cliente!', 'erro'); return; }
       if (pedido.length === 0) { mostrarStatus('Adicione pelo menos uma peça!', 'erro'); return; }
 
@@ -409,6 +432,8 @@
         vendedor: vendedor,
         cliente: cliente,
         pagamento: 'Pix',
+        whatsapp: whatsapp,
+        email: email,
         itens: pedido.map(function (item) {
           return {
             codigo: item.codigo,
@@ -431,9 +456,25 @@
         const resultado = await resposta.json();
 
         if (resultado.ok) {
-          numeroPedido.textContent = resultado.codigo || 'TW0100';
+          ultimoCodigo = resultado.codigo || 'TW0100';
+          ultimoWhatsapp = whatsapp;
+          numeroPedido.textContent = ultimoCodigo;
+
+          // Monta a mensagem do WhatsApp com o resumo + parabéns
+          var linhas = pedido.map(function (item) {
+            return (item.peca + (item.cor ? ' ' + item.cor : '') + (item.tamanho ? ' ' + item.tamanho : '') + ' x' + item.quantidade + ' = R$ ' + formatar(item.total));
+          });
+          var totalPedido = pedido.reduce(function (soma, item) { return soma + item.total; }, 0);
+          ultimaMensagem =
+            'Olá ' + cliente + '! 🎉\n\n' +
+            'Seu pedido ' + ultimoCodigo + ' foi finalizado com sucesso!\n\n' +
+            linhas.join('\n') +
+            '\n\nTotal: R$ ' + formatar(totalPedido) +
+            '\n\nPARABÉNS PELA COMPRA.\nTenha uma excelente TATOO WEEK!';
+
           overlaySucesso.classList.add('visivel');
-          pedido = []; campoCliente.value = ''; atualizarPedido();
+          pedido = []; campoCliente.value = ''; campoWhatsapp.value = ''; campoEmail.value = '';
+          atualizarPedido();
           carregarCatalogo();
         } else {
           mostrarStatus('Erro: ' + (resultado.mensagem || 'ao salvar'), 'erro');
