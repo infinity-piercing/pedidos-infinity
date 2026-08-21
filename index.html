@@ -131,7 +131,7 @@
     #status.ok { display: block; background: #D9F2E5; color: #0A5C3D; }
     #status.erro { display: block; background: #FDE3E3; color: #8B1E1E; }
 
-    /* ===== TELA DE SUCESSO (overlay) ===== */
+    /* Tela de sucesso */
     .overlay {
       display: none;
       position: fixed;
@@ -153,44 +153,15 @@
       box-shadow: 0 10px 40px rgba(0,0,0,0.3);
       border-top: 8px solid var(--verde-claro);
     }
-    .caixa-sucesso .icone {
-      font-size: 60px;
-      margin-bottom: 10px;
-    }
-    .caixa-sucesso h2 {
-      color: var(--verde-escuro);
-      font-size: 22px;
-      margin-bottom: 8px;
-    }
-    .caixa-sucesso .numero-pedido {
-      font-size: 28px;
-      font-weight: bold;
-      color: var(--verde-claro);
-      margin: 12px 0;
-    }
-    .caixa-sucesso p {
-      font-size: 16px;
-      color: var(--texto);
-      line-height: 1.5;
-      margin-bottom: 6px;
-    }
-    .caixa-sucesso .parabens {
-      font-size: 18px;
-      font-weight: bold;
-      color: var(--verde-escuro);
-      margin-top: 10px;
-    }
+    .caixa-sucesso .icone { font-size: 60px; margin-bottom: 10px; }
+    .caixa-sucesso h2 { color: var(--verde-escuro); font-size: 22px; margin-bottom: 8px; }
+    .caixa-sucesso .numero-pedido { font-size: 28px; font-weight: bold; color: var(--verde-claro); margin: 12px 0; }
+    .caixa-sucesso p { font-size: 16px; color: var(--texto); line-height: 1.5; margin-bottom: 6px; }
+    .caixa-sucesso .parabens { font-size: 18px; font-weight: bold; color: var(--verde-escuro); margin-top: 10px; }
     .botao-fechar {
-      margin-top: 20px;
-      min-height: var(--toque);
-      width: 100%;
-      border: none;
-      border-radius: 10px;
-      background: var(--verde-escuro);
-      color: var(--branco);
-      font-size: 17px;
-      font-weight: bold;
-      cursor: pointer;
+      margin-top: 20px; min-height: var(--toque); width: 100%;
+      border: none; border-radius: 10px; background: var(--verde-escuro);
+      color: var(--branco); font-size: 17px; font-weight: bold; cursor: pointer;
     }
   </style>
 </head>
@@ -221,7 +192,6 @@
     </section>
   </main>
 
-  <!-- Tela de sucesso -->
   <div class="overlay" id="overlay-sucesso">
     <div class="caixa-sucesso">
       <div class="icone">🎉</div>
@@ -263,19 +233,16 @@
     btnFechar.addEventListener('click', fecharSucesso);
 
     function montarVendedores() {
-      VENDEDORES.forEach(function (nome, indice) {
+      VENDEDORES.forEach(function (nome) {
         const opcao = document.createElement('option');
         opcao.value = nome;
         opcao.textContent = nome;
         selVendedor.appendChild(opcao);
       });
-      // Seleciona o primeiro vendedor por padrão (corrige o erro "selecione o vendedor")
       selVendedor.selectedIndex = 0;
     }
 
-    function fecharSucesso() {
-      overlaySucesso.classList.remove('visivel');
-    }
+    function fecharSucesso() { overlaySucesso.classList.remove('visivel'); }
 
     async function carregarCatalogo() {
       try {
@@ -292,16 +259,14 @@
       }
     }
 
+    // Converte qualquer link do Drive para formato renderizável
     function corrigirFoto(url) {
       if (!url) return '';
       url = url.trim();
-      var matchFile = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
-      var matchOpen = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
-      var matchUc = url.match(/drive\.google\.com\/uc\?[^"]*id=([^&]+)/);
-      var id = null;
-      if (matchFile) id = matchFile[1];
-      else if (matchOpen) id = matchOpen[1];
-      else if (matchUc) id = matchUc[1];
+      var m1 = url.match(/drive\.google\.com\/file\/d\/([^\/]+)/);
+      var m2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+      var m3 = url.match(/drive\.google\.com\/uc\?[^"]*id=([^&]+)/);
+      var id = m1 ? m1[1] : (m2 ? m2[1] : (m3 ? m3[1] : null));
       if (id) return 'https://drive.google.com/uc?export=view&id=' + id;
       if (url.startsWith('http://')) url = 'https://' + url.substring(7);
       if (!url.startsWith('http')) return '';
@@ -311,8 +276,7 @@
     function estoqueDisponivel(peca) {
       const chave = peca.codigo + '|' + (peca.cor || '') + '|' + (peca.tamanho || '');
       const noPedido = pedido.find(function (p) { return p.chave === chave; });
-      const qtdPedido = noPedido ? noPedido.quantidade : 0;
-      return peca.estoque - qtdPedido;
+      return peca.estoque - (noPedido ? noPedido.quantidade : 0);
     }
 
     function montarGrade() {
@@ -377,7 +341,6 @@
           estoqueMax: peca.estoque
         });
       }
-
       atualizarPedido();
       montarGrade();
     }
@@ -385,14 +348,9 @@
     function ajustarQuantidade(indice, delta) {
       const item = pedido[indice];
       if (!item) return;
-
       const novaQtd = item.quantidade + delta;
       if (novaQtd < 1) { removerItem(indice); return; }
-      if (novaQtd > item.estoqueMax) {
-        mostrarStatus('Estoque insuficiente! Máximo: ' + item.estoqueMax, 'erro');
-        return;
-      }
-
+      if (novaQtd > item.estoqueMax) { mostrarStatus('Estoque insuficiente! Máximo: ' + item.estoqueMax, 'erro'); return; }
       item.quantidade = novaQtd;
       item.total = novaQtd * item.valorUnitario;
       atualizarPedido();
@@ -441,7 +399,6 @@
     }
 
     async function finalizarPedido() {
-      // O vendedor já vem selecionado por padrão (montarVendedores)
       const vendedor = selVendedor.value;
       const cliente = campoCliente.value.trim();
       if (!cliente) { mostrarStatus('Digite o nome do cliente!', 'erro'); return; }
@@ -449,37 +406,45 @@
 
       btnFinalizar.disabled = true;
       btnFinalizar.textContent = 'Enviando...';
-      let sucesso = true;
-      let codigoGerado = '';
 
-      for (const item of pedido) {
-        const dados = {
-          vendedor: vendedor, cliente: cliente, codigo: item.codigo,
-          peca: item.peca, cor: item.cor, tamanho: item.tamanho,
-          quantidade: item.quantidade,
-          valorUnitario: item.valorUnitario, total: item.total, pagamento: 'Pix'
-        };
-        try {
-          const resposta = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(dados)
-          });
-          const resultado = await resposta.json();
-          if (resultado.ok && resultado.codigo) codigoGerado = resultado.codigo;
-          if (!resultado.ok) sucesso = false;
-        } catch (erro) { sucesso = false; }
-      }
+      // Envia o PEDIDO INTEIRO de uma vez (todos os itens juntos)
+      const dados = {
+        vendedor: vendedor,
+        cliente: cliente,
+        pagamento: 'Pix',
+        itens: pedido.map(function (item) {
+          return {
+            codigo: item.codigo,
+            peca: item.peca,
+            cor: item.cor,
+            tamanho: item.tamanho,
+            quantidade: item.quantidade,
+            valorUnitario: item.valorUnitario,
+            total: item.total
+          };
+        })
+      };
 
-      if (sucesso) {
-        // Mostra a tela de sucesso com o número do pedido
-        numeroPedido.textContent = codigoGerado || 'TW0100';
-        overlaySucesso.classList.add('visivel');
-        pedido = []; campoCliente.value = ''; atualizarPedido();
-        carregarCatalogo();
-      } else {
+      try {
+        const resposta = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(dados)
+        });
+        const resultado = await resposta.json();
+
+        if (resultado.ok) {
+          numeroPedido.textContent = resultado.codigo || 'TW0100';
+          overlaySucesso.classList.add('visivel');
+          pedido = []; campoCliente.value = ''; atualizarPedido();
+          carregarCatalogo();
+        } else {
+          mostrarStatus('Erro: ' + (resultado.mensagem || 'ao salvar'), 'erro');
+        }
+      } catch (erro) {
         mostrarStatus('Erro ao salvar. Confira o link /exec!', 'erro');
       }
+
       btnFinalizar.disabled = false;
       btnFinalizar.textContent = '✅ Finalizar pedido';
     }
