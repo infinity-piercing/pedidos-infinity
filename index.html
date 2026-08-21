@@ -101,11 +101,7 @@
       padding: 10px; border-bottom: 1px solid #E5ECE8; font-size: 14px;
     }
     .item-pedido .info { flex: 1; min-width: 0; }
-    /* Controles de quantidade + e - */
-    .controle-qtd {
-      display: flex; align-items: center; gap: 8px;
-      margin-top: 6px;
-    }
+    .controle-qtd { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
     .botao-qtd {
       width: 40px; height: 40px; border: none; border-radius: 8px;
       font-size: 20px; font-weight: bold; cursor: pointer; color: var(--branco);
@@ -166,7 +162,7 @@
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbwi_zQM8tbXoisRTBenG4kPQvA10MSn5Bhrwel05SeBfSgY7qV9fG2qWakCbz62CDU3kQ/exec';
     const VENDEDORES = ['Andrei', 'Ed', 'Jennifer', 'Jéssica', 'Larissa', 'Tamires'];
-    const ESTOQUE_BAIXO = 5; // avisa quando estoque for menor que este valor
+    const ESTOQUE_BAIXO = 5;
 
     let catalogo = [];
     let pedido = [];
@@ -211,13 +207,20 @@
       }
     }
 
-    // Corrige a URL da foto: garante que comece com https://
     function corrigirFoto(url) {
       if (!url) return '';
       url = url.trim();
       if (url.startsWith('http://')) url = 'https://' + url.substring(7);
       if (!url.startsWith('http')) return '';
       return url;
+    }
+
+    // Retorna o estoque disponível considerando o que já está no pedido
+    function estoqueDisponivel(peca) {
+      const chave = peca.codigo + '|' + (peca.cor || '') + '|' + (peca.tamanho || '');
+      const noPedido = pedido.find(function (p) { return p.chave === chave; });
+      const qtdPedido = noPedido ? noPedido.quantidade : 0;
+      return peca.estoque - qtdPedido;
     }
 
     function montarGrade() {
@@ -229,19 +232,19 @@
 
       gradeCatalogo.innerHTML = '';
       filtrados.forEach(function (peca) {
+        const disponivel = estoqueDisponivel(peca);
         const botao = document.createElement('button');
-        botao.className = 'botao-peca' + (peca.estoque <= 0 ? ' esgotado' : '');
+        botao.className = 'botao-peca' + (disponivel <= 0 ? ' esgotado' : '');
 
         const fotoUrl = corrigirFoto(peca.foto);
         const fotoHtml = fotoUrl
           ? '<img class="foto-peca" src="' + fotoUrl + '" alt="' + (peca.peca || '') + '" onerror="this.style.display=\'none\'">'
           : '<div class="foto-peca"></div>';
 
-        // Classe do estoque: normal, baixo ou zero
         let classeEstoque = 'normal';
-        let textoEstoque = 'Em estoque: ' + peca.estoque;
-        if (peca.estoque <= 0) { classeEstoque = 'zero'; textoEstoque = 'ESGOTADO'; }
-        else if (peca.estoque < ESTOQUE_BAIXO) { classeEstoque = 'baixo'; textoEstoque = '⚠️ Estoque baixo: ' + peca.estoque; }
+        let textoEstoque = 'Em estoque: ' + disponivel;
+        if (disponivel <= 0) { classeEstoque = 'zero'; textoEstoque = 'ESGOTADO'; }
+        else if (disponivel < ESTOQUE_BAIXO) { classeEstoque = 'baixo'; textoEstoque = '⚠️ Estoque baixo: ' + disponivel; }
 
         botao.innerHTML =
           '<div class="conteudo-peca">' +
@@ -260,16 +263,11 @@
     }
 
     function adicionarAoPedido(peca) {
-      if (peca.estoque <= 0) { mostrarStatus('Peça esgotada!', 'erro'); return; }
+      const disponivel = estoqueDisponivel(peca);
+      if (disponivel <= 0) { mostrarStatus('Peça esgotada ou sem estoque disponível!', 'erro'); return; }
 
       const chave = peca.codigo + '|' + (peca.cor || '') + '|' + (peca.tamanho || '');
       const existente = pedido.find(function (p) { return p.chave === chave; });
-
-      const jaNoPedido = existente ? existente.quantidade : 0;
-      if (jaNoPedido + 1 > peca.estoque) {
-        mostrarStatus('Estoque insuficiente para esta peça!', 'erro');
-        return;
-      }
 
       if (existente) {
         existente.quantidade += 1;
@@ -287,10 +285,12 @@
           estoqueMax: peca.estoque
         });
       }
+
+      // Atualiza a tela: estoque cai na hora
       atualizarPedido();
+      montarGrade();
     }
 
-    // Ajusta a quantidade com os botões + e -
     function ajustarQuantidade(indice, delta) {
       const item = pedido[indice];
       if (!item) return;
@@ -305,6 +305,7 @@
       item.quantidade = novaQtd;
       item.total = novaQtd * item.valorUnitario;
       atualizarPedido();
+      montarGrade();
     }
 
     function atualizarPedido() {
@@ -334,10 +335,18 @@
       campoTotal.textContent = 'R$ ' + formatar(total);
     }
 
-    function removerItem(indice) { pedido.splice(indice, 1); atualizarPedido(); }
+    function removerItem(indice) {
+      pedido.splice(indice, 1);
+      atualizarPedido();
+      montarGrade();
+    }
 
     function limparPedido() {
-      if (confirm('Limpar todo o pedido?')) { pedido = []; atualizarPedido(); }
+      if (confirm('Limpar todo o pedido?')) {
+        pedido = [];
+        atualizarPedido();
+        montarGrade();
+      }
     }
 
     async function finalizarPedido() {
