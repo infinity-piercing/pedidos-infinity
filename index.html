@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infinity Piercing — PDV</title>
+  <style>
+    :root {
+      --verde-escuro: #0A3D2E;
+      --verde-medio: #12805C;
+      --verde-claro: #1FA97C;
+      --fundo: #F4F7F5;
+      --branco: #FFFFFF;
+      --texto: #1A2E26;
+      --toque: 60px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--fundo);
+      color: var(--texto);
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cabecalho {
+      background: linear-gradient(135deg, var(--verde-escuro), var(--verde-medio));
+      color: var(--branco);
+      text-align: center;
+      padding: 18px;
+    }
+    .cabecalho h1 { font-size: 22px; }
+    .area-principal {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      max-width: 1200px;
+      margin: 15px auto;
+      padding: 0 15px;
+    }
+    @media (max-width: 900px) { .area-principal { grid-template-columns: 1fr; } }
+    .painel {
+      background: var(--branco);
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-top: 5px solid var(--verde-claro);
+    }
+    .painel h2 { color: var(--verde-escuro); margin-bottom: 12px; font-size: 18px; }
+    .busca {
+      width: 100%;
+      min-height: var(--toque);
+      padding: 12px;
+      border: 2px solid #D5E0DA;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    .grade-catalogo {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      max-height: 55vh;
+      overflow-y: auto;
+    }
+    .botao-peca {
+      min-height: var(--toque);
+      padding: 12px;
+      background: var(--branco);
+      border: 2px solid var(--verde-claro);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      text-align: left;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .botao-peca:active { background: var(--verde-claro); color: var(--branco); transform: scale(0.97); }
+    .botao-peca .nome { font-weight: bold; display: block; }
+    .botao-peca .sku { color: #5A6E64; font-size: 12px; display: block; }
+    .botao-peca .preco { color: var(--verde-escuro); font-weight: bold; }
+    .seletor-vendedor, .campo-cliente {
+      width: 100%;
+      min-height: var(--toque);
+      padding: 12px;
+      border: 2px solid #D5E0DA;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-bottom: 10px;
+      background: var(--branco);
+    }
+    .lista-pedido { max-height: 30vh; overflow-y: auto; margin-bottom: 10px; }
+    .item-pedido {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #E5ECE8;
+      font-size: 14px;
+    }
+    .item-pedido .remover {
+      background: #E74C3C; color: var(--branco); border: none;
+      border-radius: 6px; padding: 8px 12px; font-size: 14px; cursor: pointer; min-height: 40px;
+    }
+    .total {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px; background: var(--verde-claro); color: var(--branco);
+      border-radius: 8px; font-size: 18px; margin-bottom: 10px;
+    }
+    .total strong { font-size: 24px; }
+    .acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .botao-acao {
+      min-height: var(--toque); border: none; border-radius: 10px;
+      font-size: 17px; font-weight: bold; cursor: pointer; color: var(--branco);
+    }
+    .botao-finalizar { background: var(--verde-escuro); grid-column: 1 / -1; }
+    .botao-limpar { background: #E74C3C; }
+    #status { margin-top: 10px; padding: 12px; border-radius: 8px; font-size: 14px; display: none; text-align: center; }
+    #status.ok { display: block; background: #D9F2E5; color: #0A5C3D; }
+    #status.erro { display: block; background: #FDE3E3; color: #8B1E1E; }
+  </style>
+</head>
+<body>
+  <header class="cabecalho">
+    <h1>Infinity Piercing — PDV</h1>
+  </header>
+
+  <main class="area-principal">
+    <section class="painel">
+      <h2>🛍️ Catálogo</h2>
+      <input class="busca" id="busca" placeholder="🔍 Buscar por nome ou código...">
+      <div class="grade-catalogo" id="grade-catalogo"></div>
+    </section>
+
+    <section class="painel">
+      <h2>🧾 Pedido</h2>
+      <select class="seletor-vendedor" id="vendedor"></select>
+      <input class="campo-cliente" id="cliente" placeholder="Nome do cliente">
+      <div class="lista-pedido" id="lista-pedido"></div>
+      <div class="total"><span>TOTAL:</span><strong id="total">R$ 0,00</strong></div>
+      <div class="acoes">
+        <button class="botao-acao botao-finalizar" id="btn-finalizar">✅ Finalizar pedido</button>
+        <button class="botao-acao botao-limpar" id="btn-limpar">🗑️ Limpar</button>
+      </div>
+      <div id="status"></div>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwi_zQM8tbXoisRTBenG4kPQvA10MSn5Bhrwel05SeBfSgY7qV9fG2qWakCbz62CDU3kQ/exec';
+    const VENDEDORES = ['Andrei', 'Ed', 'Jennifer', 'Jéssica, 'Larissa, 'Tamires'];
+
+    let catalogo = [];
+    let pedido = [];
+
+    const gradeCatalogo = document.getElementById('grade-catalogo');
+    const selVendedor = document.getElementById('vendedor');
+    const campoCliente = document.getElementById('cliente');
+    const listaPedido = document.getElementById('lista-pedido');
+    const campoTotal = document.getElementById('total');
+    const btnFinalizar = document.getElementById('btn-finalizar');
+    const btnLimpar = document.getElementById('btn-limpar');
+    const divStatus = document.getElementById('status');
+    const campoBusca = document.getElementById('busca');
+
+    montarVendedores();
+    carregarCatalogo();
+    btnFinalizar.addEventListener('click', finalizarPedido);
+    btnLimpar.addEventListener('click', limparPedido);
+    campoBusca.addEventListener('input', montarGrade);
+
+    function montarVendedores() {
+      VENDEDORES.forEach(function (nome) {
+        const opcao = document.createElement('option');
+        opcao.value = nome;
+        opcao.textContent = nome;
+        selVendedor.appendChild(opcao);
+      });
+    }
+
+    async function carregarCatalogo() {
+      try {
+        const resposta = await fetch(API_URL);
+        const dados = await resposta.json();
+        if (dados.ok) {
+          catalogo = dados.catalogo || [];
+          montarGrade();
+        }
+      } catch (erro) {
+        gradeCatalogo.innerHTML = '<p style="color:#5A6E64">Catálogo não carregado. Confira o link /exec.</p>';
+      }
+    }
+
+    function montarGrade() {
+      const termo = campoBusca.value.toLowerCase();
+      const filtrados = catalogo.filter(function (p) {
+        return (p.peca || '').toLowerCase().includes(termo) ||
+               (p.codigo || '').toLowerCase().includes(termo);
+      });
+
+      gradeCatalogo.innerHTML = '';
+      filtrados.forEach(function (peca) {
+        const botao = document.createElement('button');
+        botao.className = 'botao-peca';
+        botao.innerHTML =
+          '<span class="nome">' + (peca.peca || peca.codigo) + '</span>' +
+          '<span class="sku">' + (peca.codigo || '') + '</span>' +
+          '<span class="preco">R$ ' + formatar(peca.preco) + '</span>';
+        botao.addEventListener('click', function () { adicionarAoPedido(peca); });
+        gradeCatalogo.appendChild(botao);
+      });
+    }
+
+    function adicionarAoPedido(peca) {
+      const existente = pedido.find(function (p) { return p.codigo === peca.codigo; });
+      if (existente) {
+        existente.quantidade += 1;
+      } else {
+        pedido.push({
+          codigo: peca.codigo,
+          peca: peca.peca || peca.codigo,
+          quantidade: 1,
+          valorUnitario: peca.preco,
+          total: peca.preco
+        });
+      }
+      atualizarPedido();
+    }
+
+    function atualizarPedido() {
+      listaPedido.innerHTML = '';
+      let total = 0;
+      pedido.forEach(function (item, indice) {
+        total += item.total;
+        const div = document.createElement('div');
+        div.className = 'item-pedido';
+        div.innerHTML =
+          '<div><strong>' + item.peca + '</strong> x' + item.quantidade +
+          '<br><small>Código: ' + item.codigo + ' | R$ ' + formatar(item.valorUnitario) + '</small></div>' +
+          '<div style="text-align:right">R$ ' + formatar(item.total) +
+          '<br><button class="remover" onclick="removerItem(' + indice + ')">Remover</button></div>';
+        listaPedido.appendChild(div);
+      });
+      campoTotal.textContent = 'R$ ' + formatar(total);
+    }
+
+    function removerItem(indice) { pedido.splice(indice, 1); atualizarPedido(); }
+
+    function limparPedido() {
+      if (confirm('Limpar todo o pedido?')) { pedido = []; atualizarPedido(); }
+    }
+
+    async function finalizarPedido() {
+      const vendedor = selVendedor.value;
+      const cliente = campoCliente.value.trim();
+      if (!vendedor || !cliente) { mostrarStatus('Escolha o vendedor e digite o cliente!', 'erro'); return; }
+      if (pedido.length === 0) { mostrarStatus('Adicione pelo menos uma peça!', 'erro'); return; }
+
+      btnFinalizar.disabled = true;
+      btnFinalizar.textContent = 'Enviando...';
+      let sucesso = true;
+
+      for (const item of pedido) {
+        const dados = {
+          vendedor: vendedor, cliente: cliente, codigo: item.codigo,
+          peca: item.peca, quantidade: item.quantidade,
+          valorUnitario: item.valorUnitario, total: item.total, pagamento: 'Pix'
+        };
+        try {
+          const resposta = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(dados)
+          });
+          const resultado = await resposta.json();
+          if (!resultado.ok) sucesso = false;
+        } catch (erro) { sucesso = false; }
+      }
+
+      if (sucesso) {
+        mostrarStatus('✅ Pedido registrado na planilha!', 'ok');
+        pedido = []; campoCliente.value = ''; atualizarPedido();
+      } else {
+        mostrarStatus('Erro ao salvar. Confira o link /exec!', 'erro');
+      }
+      btnFinalizar.disabled = false;
+      btnFinalizar.textContent = '✅ Finalizar pedido';
+    }
+
+    function mostrarStatus(texto, tipo) { divStatus.textContent = texto; divStatus.className = tipo; }
+    function formatar(valor) { return Number(valor).toFixed(2).replace('.', ','); }
+  </script>
+</body>
+</html>
