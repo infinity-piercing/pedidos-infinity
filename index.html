@@ -114,6 +114,7 @@
       background: #E74C3C; color: var(--branco); border: none;
       border-radius: 6px; padding: 8px 12px; font-size: 14px; cursor: pointer; min-height: 40px;
     }
+    /* Total agora fica ACIMA da lista de pedidos */
     .total {
       display: flex; justify-content: space-between; align-items: center;
       padding: 14px; background: var(--verde-claro); color: var(--branco);
@@ -185,8 +186,9 @@
       <input class="campo-cliente" id="cliente" placeholder="Nome do cliente">
       <input class="campo-whatsapp" id="whatsapp" placeholder="WhatsApp do cliente (ex: 11999999999)">
       <input class="campo-email" id="email" placeholder="E-mail do cliente">
-      <div class="lista-pedido" id="lista-pedido"></div>
+      <!-- TOTAL agora fica ACIMA da lista de pedidos -->
       <div class="total"><span>TOTAL:</span><strong id="total">R$ 0,00</strong></div>
+      <div class="lista-pedido" id="lista-pedido"></div>
       <div class="acoes">
         <button class="botao-acao botao-finalizar" id="btn-finalizar">✅ Finalizar pedido</button>
         <button class="botao-acao botao-limpar" id="btn-limpar">🗑️ Limpar</button>
@@ -209,7 +211,7 @@
   </div>
 
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwi_zQM8tbXoisRTBenG4kPQvA10MSn5Bhrwel05SeBfSgY7qV9fG2qWakCbz62CDU3kQ/exec';
+    const API_URL = 'COLE_AQUI_O_LINK_NOVO';
     const VENDEDORES = ['Andrei', 'Ed', 'Jennifer', 'Jéssica', 'Larissa', 'Tamires'];
     const ESTOQUE_BAIXO = 5;
 
@@ -298,6 +300,19 @@
       return peca.estoque - (noPedido ? noPedido.quantidade : 0);
     }
 
+    // Ordena o catálogo por SKU (código) em ordem crescente
+    function ordenarPorSku(lista) {
+      return lista.slice().sort(function (a, b) {
+        var skuA = String(a.codigo || '').trim();
+        var skuB = String(b.codigo || '').trim();
+        // Compara como número quando ambos são numéricos, senão como texto
+        var numA = Number(skuA);
+        var numB = Number(skuB);
+        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+        return skuA.localeCompare(skuB);
+      });
+    }
+
     function montarGrade() {
       const termo = campoBusca.value.toLowerCase();
       const filtrados = catalogo.filter(function (p) {
@@ -305,8 +320,11 @@
                (p.codigo || '').toLowerCase().includes(termo);
       });
 
+      // Aplica a ordenação por SKU crescente
+      const ordenados = ordenarPorSku(filtrados);
+
       gradeCatalogo.innerHTML = '';
-      filtrados.forEach(function (peca) {
+      ordenados.forEach(function (peca) {
         const disponivel = estoqueDisponivel(peca);
         const botao = document.createElement('button');
         botao.className = 'botao-peca' + (disponivel <= 0 ? ' esgotado' : '');
