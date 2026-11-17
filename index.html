@@ -121,6 +121,14 @@
       border-radius: 8px; font-size: 18px; margin-bottom: 10px;
     }
     .total strong { font-size: 24px; }
+    .resumo-pedido { padding: 14px; border: 1px solid #D5E0DA; border-radius: 10px; background: #F8FBF9; margin-bottom: 10px; }
+    .resumo-linha { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; font-size:15px; }
+    .resumo-linha:last-child { margin-bottom:0; }
+    .resumo-linha.desconto { color:#0A7050; font-weight:bold; }
+    .campo-desconto { width:105px; min-height:44px; border:2px solid #1FA97C; border-radius:8px; padding:8px 10px; font-size:17px; text-align:right; background:#fff; }
+    .dica-desconto { font-size:12px; color:#5A6E64; margin: -2px 0 10px; }
+    .total { margin-bottom:0; }
+    @media (max-width:450px) { .resumo-linha {font-size:14px;} .campo-desconto {width:90px;} }
     .acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .botao-acao {
       min-height: var(--toque); border: none; border-radius: 10px;
@@ -186,8 +194,13 @@
       <input class="campo-cliente" id="cliente" placeholder="Nome do cliente">
       <input class="campo-whatsapp" id="whatsapp" placeholder="WhatsApp do cliente (ex: 11999999999)">
       <input class="campo-email" id="email" placeholder="E-mail do cliente">
-      <!-- TOTAL agora fica ACIMA da lista de pedidos -->
-      <div class="total"><span>TOTAL:</span><strong id="total">R$ 0,00</strong></div>
+      <div class="resumo-pedido">
+        <div class="resumo-linha"><span>Subtotal dos produtos</span><strong id="subtotal">R$ 0,00</strong></div>
+        <label class="resumo-linha" for="desconto-percentual"><span>Desconto no pedido (%)</span><input class="campo-desconto" type="number" inputmode="decimal" id="desconto-percentual" min="0" max="100" step="0.01" value="0" aria-label="Desconto percentual no pedido"></label>
+        <p class="dica-desconto">Digite de 0 a 100. O total será atualizado automaticamente.</p>
+        <div class="resumo-linha desconto"><span>Valor do desconto</span><strong id="valor-desconto">− R$ 0,00</strong></div>
+        <div class="total"><span>TOTAL A PAGAR:</span><strong id="total">R$ 0,00</strong></div>
+      </div>
       <div class="lista-pedido" id="lista-pedido"></div>
       <div class="acoes">
         <button class="botao-acao botao-finalizar" id="btn-finalizar">✅ Finalizar pedido</button>
@@ -228,6 +241,9 @@
     const campoEmail = document.getElementById('email');
     const listaPedido = document.getElementById('lista-pedido');
     const campoTotal = document.getElementById('total');
+    const campoSubtotal = document.getElementById('subtotal');
+    const campoDesconto = document.getElementById('desconto-percentual');
+    const campoValorDesconto = document.getElementById('valor-desconto');
     const btnFinalizar = document.getElementById('btn-finalizar');
     const btnLimpar = document.getElementById('btn-limpar');
     const divStatus = document.getElementById('status');
@@ -242,6 +258,11 @@
     btnFinalizar.addEventListener('click', finalizarPedido);
     btnLimpar.addEventListener('click', limparPedido);
     campoBusca.addEventListener('input', montarGrade);
+    campoDesconto.addEventListener('input', atualizarPedido);
+    campoDesconto.addEventListener('change', function () {
+      campoDesconto.value = String(obterPercentualDesconto());
+      atualizarPedido();
+    });
     btnFechar.addEventListener('click', fecharSucesso);
     btnWhatsapp.addEventListener('click', abrirWhatsapp);
 
@@ -394,6 +415,25 @@
       montarGrade();
     }
 
+    function obterPercentualDesconto() {
+      const numero = Number(String(campoDesconto.value).replace(',', '.'));
+      return Number.isFinite(numero) ? Math.min(100, Math.max(0, numero)) : 0;
+    }
+
+    function calcularTotais() {
+      const subtotalCentavos = pedido.reduce(function (soma, item) {
+        return soma + Math.round(Number(item.valorUnitario) * 100) * item.quantidade;
+      }, 0);
+      const descontoPercentual = obterPercentualDesconto();
+      const descontoCentavos = Math.round(subtotalCentavos * descontoPercentual / 100);
+      return {
+        subtotal: subtotalCentavos / 100,
+        descontoPercentual: descontoPercentual,
+        valorDesconto: descontoCentavos / 100,
+        total: (subtotalCentavos - descontoCentavos) / 100
+      };
+    }
+
     function atualizarPedido() {
       listaPedido.innerHTML = '';
       let total = 0;
@@ -418,7 +458,10 @@
           '</div>';
         listaPedido.appendChild(div);
       });
-      campoTotal.textContent = 'R$ ' + formatar(total);
+      const totais = calcularTotais();
+      campoSubtotal.textContent = 'R$ ' + formatar(totais.subtotal);
+      campoValorDesconto.textContent = '− R$ ' + formatar(totais.valorDesconto);
+      campoTotal.textContent = 'R$ ' + formatar(totais.total);
     }
 
     function removerItem(indice) {
@@ -430,6 +473,7 @@
     function limparPedido() {
       if (confirm('Limpar todo o pedido?')) {
         pedido = [];
+        campoDesconto.value = '0';
         atualizarPedido();
         montarGrade();
       }
@@ -443,6 +487,7 @@
       if (!cliente) { mostrarStatus('Digite o nome do cliente!', 'erro'); return; }
       if (pedido.length === 0) { mostrarStatus('Adicione pelo menos uma peça!', 'erro'); return; }
 
+      const totais = calcularTotais();
       btnFinalizar.disabled = true;
       btnFinalizar.textContent = 'Enviando...';
 
@@ -452,6 +497,10 @@
         pagamento: 'Pix',
         whatsapp: whatsapp,
         email: email,
+        subtotal: totais.subtotal,
+        descontoPercentual: totais.descontoPercentual,
+        valorDesconto: totais.valorDesconto,
+        total: totais.total,
         itens: pedido.map(function (item) {
           return {
             codigo: item.codigo,
@@ -481,19 +530,23 @@
           var linhas = pedido.map(function (item) {
             return (item.peca + (item.cor ? ' ' + item.cor : '') + (item.tamanho ? ' ' + item.tamanho : '') + ' x' + item.quantidade + ' = R$ ' + formatar(item.total));
           });
-          var totalPedido = pedido.reduce(function (soma, item) { return soma + item.total; }, 0);
+          var totalPedido = totais.total;
+          var resumoDesconto = totais.descontoPercentual > 0
+            ? '\nSubtotal: R$ ' + formatar(totais.subtotal) +
+              '\nDesconto (' + String(totais.descontoPercentual).replace('.', ',') + '%): - R$ ' + formatar(totais.valorDesconto)
+            : '';
 
           ultimaMensagem =
             '🖤 *INFINITY PIERCING* 🖤\n\n' +
             'Olá ' + cliente + '! Tudo bem?\n\n' +
             'Recebemos seu pedido *' + ultimoCodigo + '*:\n\n' +
             linhas.join('\n') +
-            '\n\n*Total: R$ ' + formatar(totalPedido) + '*\n\n' +
+            '\n' + resumoDesconto + '\n*Total a pagar: R$ ' + formatar(totalPedido) + '*\n\n' +
             '🎉 PARABÉNS PELA COMPRA!\n' +
             'Tenha uma excelente TATOO WEEK! 💚';
 
           overlaySucesso.classList.add('visivel');
-          pedido = []; campoCliente.value = ''; campoWhatsapp.value = ''; campoEmail.value = '';
+          pedido = []; campoCliente.value = ''; campoWhatsapp.value = ''; campoEmail.value = ''; campoDesconto.value = '0';
           atualizarPedido();
           carregarCatalogo();
         } else {
