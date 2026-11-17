@@ -483,7 +483,7 @@
       const vendedor = selVendedor.value;
       const cliente = campoCliente.value.trim();
       const whatsapp = campoWhatsapp.value.trim();
-      const email = campoEmail.value.trim();
+      const email = campoEmail ? campoEmail.value.trim() : '';
       if (!cliente) { mostrarStatus('Digite o nome do cliente!', 'erro'); return; }
       if (pedido.length === 0) { mostrarStatus('Adicione pelo menos uma peça!', 'erro'); return; }
 
@@ -537,16 +537,16 @@
             : '';
 
           ultimaMensagem =
-            '🖤 *INFINITY PIERCING* 🖤\n\n' +
+            '🍀 *INFINITY PIERCING* 💚\n\n' +
             'Olá ' + cliente + '! Tudo bem?\n\n' +
             'Recebemos seu pedido *' + ultimoCodigo + '*:\n\n' +
             linhas.join('\n') +
             '\n' + resumoDesconto + '\n*Total a pagar: R$ ' + formatar(totalPedido) + '*\n\n' +
             '🎉 PARABÉNS PELA COMPRA!\n' +
-            'Tenha uma excelente TATOO WEEK! 💚';
+            'Tenha uma excelente TATOOWEEK! 💚';
 
           overlaySucesso.classList.add('visivel');
-          pedido = []; campoCliente.value = ''; campoWhatsapp.value = ''; campoEmail.value = ''; campoDesconto.value = '0';
+          pedido = []; campoCliente.value = ''; campoWhatsapp.value = ''; if (campoEmail) campoEmail.value = ''; campoDesconto.value = '0';
           atualizarPedido();
           carregarCatalogo();
         } else {
