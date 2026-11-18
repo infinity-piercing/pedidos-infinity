@@ -129,6 +129,10 @@
     .dica-desconto { font-size:12px; color:#5A6E64; margin: -2px 0 10px; }
     .total { margin-bottom:0; }
     @media (max-width:450px) { .resumo-linha {font-size:14px;} .campo-desconto {width:90px;} }
+    .campo-observacoes { width:100%; min-height:95px; padding:12px; border:2px solid #D5E0DA; border-radius:8px; font:16px Arial,sans-serif; resize:vertical; background:#FFFFFF; color:var(--texto); }
+    .bloco-observacoes { margin: 12px 0; }
+    .bloco-observacoes label { display:block; font-weight:bold; margin-bottom:7px; color:var(--verde-escuro); }
+    .bloco-observacoes small { display:block; font-size:12px; margin-top:5px; color:#5A6E64; }
     .acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .botao-acao {
       min-height: var(--toque); border: none; border-radius: 10px;
@@ -201,6 +205,11 @@
         <div class="total"><span>TOTAL A PAGAR:</span><strong id="total">R$ 0,00</strong></div>
       </div>
       <div class="lista-pedido" id="lista-pedido"></div>
+      <div class="bloco-observacoes">
+        <label for="observacoes">📝 Observações internas</label>
+        <textarea id="observacoes" class="campo-observacoes" maxlength="2000" placeholder="Ex.: separar para retirada, conferir embalagem, pedido prioritário..."></textarea>
+        <small>Uso interno: enviado à planilha. Não aparece na mensagem do WhatsApp do cliente.</small>
+      </div>
       <div class="acoes">
         <button class="botao-acao botao-finalizar" id="btn-finalizar">✅ Finalizar pedido</button>
         <button class="botao-acao botao-limpar" id="btn-limpar">🗑️ Limpar</button>
@@ -239,6 +248,7 @@
     const campoCliente = document.getElementById('cliente');
     const campoWhatsapp = document.getElementById('whatsapp');
     const campoEmail = document.getElementById('email');
+    const campoObservacoes = document.getElementById('observacoes');
     const listaPedido = document.getElementById('lista-pedido');
     const campoTotal = document.getElementById('total');
     const campoSubtotal = document.getElementById('subtotal');
@@ -474,6 +484,7 @@
       if (confirm('Limpar todo o pedido?')) {
         pedido = [];
         campoDesconto.value = '0';
+        campoObservacoes.value = '';
         atualizarPedido();
         montarGrade();
       }
@@ -484,6 +495,7 @@
       const cliente = campoCliente.value.trim();
       const whatsapp = campoWhatsapp.value.trim();
       const email = campoEmail ? campoEmail.value.trim() : '';
+      const observacoes = campoObservacoes.value.trim();
       if (!cliente) { mostrarStatus('Digite o nome do cliente!', 'erro'); return; }
       if (pedido.length === 0) { mostrarStatus('Adicione pelo menos uma peça!', 'erro'); return; }
 
@@ -497,6 +509,7 @@
         pagamento: 'Pix',
         whatsapp: whatsapp,
         email: email,
+        observacoes: observacoes,
         subtotal: totais.subtotal,
         descontoPercentual: totais.descontoPercentual,
         valorDesconto: totais.valorDesconto,
@@ -537,16 +550,16 @@
             : '';
 
           ultimaMensagem =
-            '🍀 *INFINITY PIERCING* 💚\n\n' +
+            '🖤 *INFINITY PIERCING* 🖤\n\n' +
             'Olá ' + cliente + '! Tudo bem?\n\n' +
             'Recebemos seu pedido *' + ultimoCodigo + '*:\n\n' +
             linhas.join('\n') +
             '\n' + resumoDesconto + '\n*Total a pagar: R$ ' + formatar(totalPedido) + '*\n\n' +
             '🎉 PARABÉNS PELA COMPRA!\n' +
-            'Tenha uma excelente TATOOWEEK! 💚';
+            'Tenha uma excelente TATOO WEEK! 💚';
 
           overlaySucesso.classList.add('visivel');
-          pedido = []; campoCliente.value = ''; campoWhatsapp.value = ''; if (campoEmail) campoEmail.value = ''; campoDesconto.value = '0';
+          pedido = []; campoCliente.value = ''; campoWhatsapp.value = ''; if (campoEmail) campoEmail.value = ''; campoDesconto.value = '0'; campoObservacoes.value = '';
           atualizarPedido();
           carregarCatalogo();
         } else {
