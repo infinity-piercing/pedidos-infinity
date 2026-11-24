@@ -188,7 +188,27 @@
   <main class="area-principal">
     <section class="painel">
       <h2>🛍️ Catálogo</h2>
-      <input class="busca" id="busca" placeholder="🔍 Buscar por nome ou código...">
+      <div style="display:flex; gap:8px; margin-bottom:10px;">
+
+  <input
+    class="busca"
+    id="busca"
+    placeholder="🔍 Buscar por nome ou código..."
+    style="flex:1; min-width:0; margin-bottom:0;"
+  >
+
+  <button
+    type="button"
+    onclick="campoBusca.value=''; montarGrade(); campoBusca.focus();"
+    style="background:#E74C3C; color:white; border:none;
+           border-radius:8px; padding:0 18px;
+           font-size:20px; cursor:pointer;"
+    title="Limpar pesquisa"
+  >
+    ✕
+  </button>
+
+</div>
       <div class="grade-catalogo" id="grade-catalogo"></div>
     </section>
 
